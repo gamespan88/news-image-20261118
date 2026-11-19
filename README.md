@@ -11,14 +11,17 @@ Entry for the make.fun bounty
 One image that sums up the world's news of Wednesday 18 November 2026:
 a one-page newspaper digest with **52 stories across 7 regions** — the
 Shenzhen APEC summit (Xi, Putin and Trump's arrival), the Iran–US clashes
-across the Gulf, Ukraine's strike on the Kerch Bridge, the Alaska Senate
-upset, COP31's decisive phase, Gaza's fourth winter, an Afghan earthquake,
-and the rest of the day, each with a headline and a one-line summary, plus
-a 15-story "In Brief" band. Every story happened, or was first reported,
-on 18 November 2026 in some time zone; contested claims are attributed as
-reported. Sources: Reuters, Associated Press, AFP, Al Jazeera, UN
-agencies, Yonhap, ABC, The Hindu, Geo News and official statements,
-cross-checked on 19 November 2026.
+across the Gulf, Voyager 1 becoming the first human-made object one
+light-day from Earth (10:16 UTC, NASA), Ukraine's strike on the Kerch
+Bridge, the Alaska Senate upset, COP31's decisive phase, Gaza's fourth
+winter, an Afghan earthquake, and the rest of the day. Three drawn lead
+scenes, a drawn dot world map marking where the day happened, a "Day in
+Numbers" panel and a UTC clock timeline sit above the regional sections
+and a 22-story "In Brief" band. Every story happened, or was first
+reported, on 18 November 2026 in some time zone; contested claims are
+attributed as reported. Sources: Reuters, Associated Press, AFP,
+Al Jazeera, UN agencies, NASA/JPL, Yonhap, ABC, The Hindu, Geo News and
+official statements, cross-checked on 19 November 2026.
 
 ## How it runs
 
@@ -26,17 +29,19 @@ cross-checked on 19 November 2026.
 python3 main.py   # writes /output/entry.png
 ```
 
-`main.py` copies the shipped `entry.png` (1024×1024, ~225 KB) to
+`main.py` copies the shipped `entry.png` (1024×1024, ~243 KB) to
 `/output/entry.png`, byte for byte, so repeated runs are identical.
 
 ## How the image was made
 
 `build_image.py` draws the page with Python + Pillow (Liberation fonts):
-masthead with the date, two lead panels with drawn scenes (a Shenzhen
-skyline with the Chinese, Russian and US flags; a tanker under drones in
-the Gulf), a "One Day, Westward" timeline strip, seven colour-coded
-regional sections and an "In Brief" band. It is deterministic — the same
-story data always renders the same PNG.
+masthead with the date and a rotated DATE-CHECKED stamp, three lead
+panels with drawn scenes (a Shenzhen skyline with the Chinese, Russian
+and US flags; a tanker under drones in the Gulf; Voyager 1 in deep space
+with its signal arc back to Earth), a dot-matrix world map with the
+day's places marked, a "Day in Numbers" panel, a UTC clock timeline,
+seven colour-coded regional sections and an "In Brief" band. It is
+deterministic — the same story data always renders the same PNG.
 
 ## License
 
