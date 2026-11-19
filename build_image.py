@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
-"""Build the entry image for make.fun bounty news-image-20261118:
-'Sum up 18 November's world news in one image.'
+"""Build v2 of the entry image for make.fun bounty news-image-20261118.
 
-Renders a one-page newspaper digest of Wednesday 18 November 2026:
-40 stories, 7 regions, every story reported on the day itself.
-Deterministic: same input data -> same PNG bytes.
+One-page newspaper digest of Wednesday 18 November 2026:
+52 stories, 7 regions, 2 drawn lead scenes, a westward day-timeline.
+Every story reported on the day itself. Deterministic output.
 """
 from PIL import Image, ImageDraw, ImageFont
-import textwrap, os
+import os
 
 W, H = 1024, 1024
 PAPER = (255, 253, 245)
@@ -16,6 +15,7 @@ GRAY = (90, 90, 90)
 RULE = (40, 40, 40)
 DATE_RED = (157, 2, 8)
 LEAD_BG = (243, 238, 224)
+WHITE = (255, 255, 255)
 
 SERIF_B = "/usr/share/fonts/truetype/liberation/LiberationSerif-Bold.ttf"
 SANS_B = "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf"
@@ -48,21 +48,10 @@ def wrap(s, font, width):
 def center(s, font, y, fill=INK):
     d.text(((W - text_w(s, font)) / 2, y), s, font=font, fill=fill)
 
-# ---------------------------------------------------------------- masthead
-MX = 26                      # side margin
-CW = W - 2 * MX              # content width
+MX = 26
+CW = W - 2 * MX
 
-center("THE WHOLE DAY'S WORLD NEWS IN A SINGLE IMAGE", F(SANS_B, 14), 14, GRAY)
-center("THE WORLD TODAY", F(SERIF_B, 58), 32)
-d.line([(MX, 100), (W - MX, 100)], fill=RULE, width=3)
-center("Wednesday 18 November 2026", F(SERIF_B, 41), 106, DATE_RED)
-center("41 stories  ·  7 regions  ·  every story reported on the day itself, date-checked",
-       F(SANS, 15), 156, GRAY)
-d.line([(MX, 182), (W - MX, 182)], fill=RULE, width=1)
-
-# ---------------------------------------------------------------- lead band
-LY = 192
-LW = (CW - 16) // 2
+# ---------------------------------------------------------------- data
 LEADS = [
     ("SHENZHEN · APEC SUMMIT", (29, 78, 137),
      "Xi & Putin meet as Trump lands",
@@ -71,23 +60,11 @@ LEADS = [
      "Ukraine, Iran and trade on the table."),
     ("THE GULF · IRAN–US CLASHES", (179, 84, 30),
      "Drones, intercepts & struck tankers",
-     "Iranian drones targeted a US base in Kuwait; Bahrain intercepted "
-     "attacks before dawn; US jets hit a missile site on Qeshm Island and "
-     "ships were struck near Hormuz. Oil held near $93."),
+     "Iranian drones targeted a US base in Kuwait and, Tehran said, US forces "
+     "in Jordan; Bahrain intercepted attacks before dawn; US jets hit a "
+     "missile site on Qeshm Island. Oil held near $93."),
 ]
-for i, (kick, col, head, body) in enumerate(LEADS):
-    x = MX + i * (LW + 16)
-    d.rectangle([x, LY, x + LW, LY + 112], fill=LEAD_BG)
-    d.rectangle([x, LY, x + LW, LY + 5], fill=col)
-    d.text((x + 12, LY + 10), kick, font=F(SANS_B, 12), fill=col)
-    d.text((x + 12, LY + 26), head, font=F(SERIF_B, 21), fill=INK)
-    yy = LY + 53
-    for ln in wrap(body, F(SANS, 12), LW - 24):
-        d.text((x + 12, yy), ln, font=F(SANS, 12), fill=(45, 45, 45))
-        yy += 15
 
-# ---------------------------------------------------------------- stories
-# (headline, one-line summary) per region
 REGIONS = {
     "ASIA-PACIFIC": ((29, 111, 184), [
         ("Quad leaders meet in Manila",
@@ -100,8 +77,8 @@ REGIONS = {
          "Japan reported an airspace violation off Fukuoka; Taiwan logged 10 PLA sorties, 11 ships."),
         ("Cyclone Akvan bears down on Odisha",
          "Severe storm put India's south Odisha coast on high alert; evacuations began, schools shut."),
-        ("Arsenic fears on the Thai–Myanmar border",
-         "Villages sought safe water as officials traced contamination in cross-border rivers."),
+        ("Afghan earthquake kills more than 600",
+         "Rescuers dug through rubble in the east as the reported death toll kept climbing."),
     ]),
     "EUROPE & UKRAINE": ((68, 86, 168), [
         ("Ukraine hits the Kerch Bridge again",
@@ -146,6 +123,8 @@ REGIONS = {
     "AFRICA": ((166, 124, 0), [
         ("Sudan's army advances in West Kordofan",
          "Army gains piled pressure on the RSF as the humanitarian crisis deepened."),
+        ("Chad closes its border with Sudan",
+         "N'Djamena shut the frontier as fighting across the border in Sudan intensified."),
         ("Nigeria votes to allow state police",
          "Landmark reform would let states raise their own police forces for the first time."),
         ("Ebola vaccines reach Phase 2 in DR Congo",
@@ -173,43 +152,147 @@ REGIONS = {
     ]),
 }
 
+BRIEFS = [
+    ("THAI–MYANMAR", "Villages fear arsenic in border rivers"),
+    ("UKRAINE", "Kyiv's drones hit Russian oil refineries"),
+    ("IRAN", "Army helicopter crash kills four in Isfahan"),
+    ("IRAQ", "Baghdad's ultimatum to a militia is rejected"),
+    ("CANADA", "More aid pledged; sanctions on Russia stay"),
+    ("US", "Supreme Court acts on Trump's anti-DEI push"),
+    ("US", "New York orders travel ban as storm hits"),
+    ("NIGERIA", "Abuja bids for a UN Human Rights Council seat"),
+    ("PAKISTAN", "Building blast death toll rises to 16"),
+    ("SPORT", "Pakistan edge India in blind-cricket thriller"),
+    ("FILM", "Robert Pattinson named the new James Bond"),
+    ("TECH", "Waymo pauses driverless freeway runs"),
+    ("EU", "Brussels moves against Temu over illegal goods"),
+    ("PAKISTAN", "Petrol cut by Rs3 to Rs325 a litre"),
+    ("NETHERLANDS", "Youngest, first openly gay PM sworn in"),
+]
+
+TOTAL = len(LEADS) + sum(len(v[1]) for v in REGIONS.values()) + len(BRIEFS)
+print("story count:", TOTAL)
+assert TOTAL == 52, TOTAL
+
+# ---------------------------------------------------------------- masthead
+center("THE WHOLE DAY'S WORLD NEWS IN A SINGLE IMAGE", F(SANS_B, 12), 10, GRAY)
+center("THE WORLD TODAY", F(SERIF_B, 50), 26)
+d.line([(MX, 86), (W - MX, 86)], fill=RULE, width=3)
+center("Wednesday 18 November 2026", F(SERIF_B, 36), 92, DATE_RED)
+center("52 stories  ·  7 regions  ·  2 drawn scenes  ·  every story reported on the day itself, date-checked",
+       F(SANS, 14), 136, GRAY)
+d.line([(MX, 160), (W - MX, 160)], fill=RULE, width=1)
+
+# ---------------------------------------------------------------- lead scenes
+def scene_apec(x, y, w, h):
+    d.rectangle([x, y, x + w, y + h], fill=(173, 206, 235))
+    d.ellipse([x + w - 34, y + 8, x + w - 10, y + 32], fill=(250, 204, 60))
+    base = y + h
+    for bx, bw, bh in [(2, 20, 44), (24, 16, 60), (42, 22, 36), (66, 15, 52), (83, 20, 40), (100, 16, 58)]:
+        d.rectangle([x + bx, base - bh, x + bx + bw, base], fill=(43, 62, 92))
+    for px, flag in [(18, "cn"), (52, "ru"), (86, "us")]:
+        d.line([(x + px, base), (x + px, base - 78)], fill=(30, 30, 30), width=2)
+        fx, fy = x + px + 2, base - 78
+        if flag == "cn":
+            d.rectangle([fx, fy, fx + 24, fy + 15], fill=(222, 41, 16))
+            for sx, sy in [(3, 3), (8, 2), (9, 5), (8, 8), (3, 10)]:
+                d.point((fx + sx, fy + sy), fill=(255, 222, 0))
+                d.rectangle([fx + sx, fy + sy, fx + sx + 1, fy + sy + 1], fill=(255, 222, 0))
+        elif flag == "ru":
+            d.rectangle([fx, fy, fx + 24, fy + 5], fill=WHITE)
+            d.rectangle([fx, fy + 5, fx + 24, fy + 10], fill=(0, 57, 166))
+            d.rectangle([fx, fy + 10, fx + 24, fy + 15], fill=(213, 43, 30))
+        else:
+            for i in range(5):
+                d.rectangle([fx, fy + i * 3, fx + 24, fy + i * 3 + 2],
+                            fill=(178, 34, 52) if i % 2 == 0 else WHITE)
+            d.rectangle([fx, fy, fx + 11, fy + 8], fill=(60, 59, 110))
+
+def scene_gulf(x, y, w, h):
+    d.rectangle([x, y, x + w, y + h], fill=(250, 224, 178))
+    d.rectangle([x, y + int(h * 0.45), x + w, y + h], fill=(38, 110, 138))
+    d.ellipse([x + 10, y + 8, x + 34, y + 32], fill=(244, 164, 40))
+    # tanker
+    ty = y + int(h * 0.62)
+    d.polygon([(x + 14, ty), (x + w - 12, ty), (x + w - 24, ty + 16), (x + 24, ty + 16)], fill=(35, 35, 40))
+    d.rectangle([x + 26, ty - 7, x + w - 30, ty], fill=(90, 90, 96))
+    d.rectangle([x + w - 40, ty - 20, x + w - 28, ty - 7], fill=(60, 60, 66))
+    d.rectangle([x + w - 36, ty - 26, x + w - 32, ty - 20], fill=(178, 34, 52))
+    # drones
+    for cx, cy in [(x + 34, y + 16), (x + 66, y + 10)]:
+        d.line([(cx - 6, cy - 4), (cx + 6, cy + 4)], fill=(30, 30, 30), width=2)
+        d.line([(cx - 6, cy + 4), (cx + 6, cy - 4)], fill=(30, 30, 30), width=2)
+        d.ellipse([cx - 2, cy - 2, cx + 2, cy + 2], fill=(30, 30, 30))
+    # intercept arc
+    d.arc([x + 40, y + 18, x + w - 6, y + 74], start=200, end=320, fill=(178, 34, 52), width=2)
+
+LY = 170
+LW = (CW - 16) // 2
+LH = 126
+for i, (kick, col, head, body) in enumerate(LEADS):
+    x = MX + i * (LW + 16)
+    d.rectangle([x, LY, x + LW, LY + LH], fill=LEAD_BG)
+    d.rectangle([x, LY, x + LW, LY + 5], fill=col)
+    if i == 0:
+        scene_apec(x + 10, LY + 12, 118, LH - 22)
+    else:
+        scene_gulf(x + 10, LY + 12, 118, LH - 22)
+    tx = x + 140
+    d.text((tx, LY + 11), kick, font=F(SANS_B, 12), fill=col)
+    d.text((tx, LY + 27), head, font=F(SERIF_B, 19), fill=INK)
+    yy = LY + 54
+    for ln in wrap(body, F(SANS, 11), LW - 152):
+        d.text((tx, yy), ln, font=F(SANS, 11), fill=(45, 45, 45))
+        yy += 14
+
+# ---------------------------------------------------------------- timeline
+TY = LY + LH + 8
+d.rectangle([MX, TY, W - MX, TY + 24], fill=INK)
+TL = ("ONE DAY, WESTWARD  »  SHENZHEN: APEC opens  »  MANILA: Quad meets  »  ANTALYA: COP31 endgame  »  "
+      "KYIV: drone night  »  GAZA: winter warning  »  RIYADH: missile downed  »  ALASKA: Senate flips")
+_tlf = F(SANS_B, 10)
+while text_w(TL, _tlf) > CW - 20:
+    _tlf = F(SANS_B, _tlf.size - 1)
+d.text((MX + 10, TY + 5), TL, font=_tlf, fill=WHITE)
+
+# ---------------------------------------------------------------- regions
 LEFT = ["ASIA-PACIFIC", "EUROPE & UKRAINE", "MIDDLE EAST"]
 RIGHT = ["AMERICAS", "AFRICA", "OCEANIA", "CLIMATE · TECH · SPORT · CULTURE"]
 
-HF = F(SANS_B, 13)      # story headline
-BF = F(SANS, 11)        # story summary
-SF = F(SANS_B, 14)      # section header
-HLH, BLH = 14, 12       # line heights
+HF = F(SANS_B, 12)
+BF = F(SANS, 10)
+SF = F(SANS_B, 13)
+HLH, BLH = 12, 10
 COLW = (CW - 20) // 2
-TOP = 318
-BOTTOM = 940
+TOP = TY + 32
+BOTTOM = 850
 
 def region_height(name):
     col, stories = REGIONS[name]
-    h = 24
+    h = 21
     for head, body in stories:
-        h += HLH + len(wrap(body, BF, COLW - 10)) * BLH + 3
-    return h + 4
+        h += HLH + len(wrap(body, BF, COLW - 10)) * BLH + 1
+    return h + 2
 
 def draw_region(name, x, y):
     col, stories = REGIONS[name]
-    d.rectangle([x, y, x + COLW, y + 20], fill=col)
-    d.text((x + 8, y + 2), name, font=SF, fill=(255, 255, 255))
-    yy = y + 24
+    d.rectangle([x, y, x + COLW, y + 18], fill=col)
+    d.text((x + 8, y + 2), name, font=SF, fill=WHITE)
+    yy = y + 21
     for head, body in stories:
-        d.rectangle([x + 1, yy + 3, x + 5, yy + 11], fill=col)
+        d.rectangle([x + 1, yy + 3, x + 5, yy + 10], fill=col)
         d.text((x + 10, yy), head, font=HF, fill=INK)
         yy += HLH
         for ln in wrap(body, BF, COLW - 10):
             d.text((x + 10, yy), ln, font=BF, fill=(60, 60, 60))
             yy += BLH
-        yy += 3
-    return yy + 4
+        yy += 1
+    return yy + 2
 
-# balance check
 lh = sum(region_height(r) for r in LEFT)
 rh = sum(region_height(r) for r in RIGHT)
 print("left col height:", lh, "right col height:", rh, "available:", BOTTOM - TOP)
+assert lh <= BOTTOM - TOP and rh <= BOTTOM - TOP, "region overflow"
 
 y = TOP
 for r in LEFT:
@@ -218,18 +301,31 @@ y = TOP
 for r in RIGHT:
     y = draw_region(r, MX + COLW + 20, y)
 
-# ---------------------------------------------------------------- footer
-FY = 946
-d.line([(MX, FY), (W - MX, FY)], fill=RULE, width=2)
-center("ALSO THIS DAY — Pakistan cuts petrol by Rs3 to Rs325 a litre · EU moves against Temu over illegal goods · Waymo pauses driverless freeway runs",
-       F(SANS_B, 12), FY + 7)
-center("Robert Pattinson named the new James Bond · Libya seizes a cocaine-and-pills haul in the east",
-       F(SANS_B, 12), FY + 23)
-center("Every story happened, or was first reported, on Wednesday 18 November 2026 in some time zone. Contested claims are attributed as reported.",
-       F(SANS_I, 12), FY + 41, GRAY)
-center("Sources: Reuters · Associated Press · AFP · Al Jazeera · UN agencies · Yonhap · ABC · The Hindu · official statements",
-       F(SANS, 11), FY + 58, GRAY)
+# ---------------------------------------------------------------- in brief
+BY = 856
+d.rectangle([MX, BY, W - MX, BY + 18], fill=RULE)
+d.text((MX + 8, BY + 2), "IN BRIEF — 15 MORE STORIES FROM THE DAY", font=F(SANS_B, 13), fill=WHITE)
+BCOLW = (CW - 2 * 14) // 3
+BF2 = F(SANS_B, 10)
+yy = BY + 26
+for row in range(5):
+    for cidx in range(3):
+        tag, txt = BRIEFS[row * 3 + cidx]
+        x = MX + cidx * (BCOLW + 14)
+        d.rectangle([x + 1, yy + 3, x + 5, yy + 10], fill=RULE)
+        line = tag + " · " + txt
+        assert text_w(line, BF2) <= BCOLW - 10, line
+        d.text((x + 10, yy), line, font=BF2, fill=INK)
+    yy += 16
 
-out = os.path.join(os.path.dirname(os.path.abspath(__file__)), "entry.png")
+# ---------------------------------------------------------------- footer
+FY = 972
+d.line([(MX, FY), (W - MX, FY)], fill=RULE, width=2)
+center("Every story happened, or was first reported, on Wednesday 18 November 2026 in some time zone. Contested claims are attributed as reported.",
+       F(SANS_I, 11), FY + 7, GRAY)
+center("Sources: Reuters · Associated Press · AFP · Al Jazeera · UN agencies · Yonhap · ABC · The Hindu · Geo News · official statements",
+       F(SANS, 10), FY + 24, GRAY)
+
+out = os.path.join(os.path.dirname(os.path.abspath(__file__)), "entry_v2.png")
 img.save(out, optimize=True)
 print("wrote", out, os.path.getsize(out), "bytes")

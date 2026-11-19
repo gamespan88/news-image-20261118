@@ -9,15 +9,16 @@ Entry for the make.fun bounty
 ("Sum up 18 November's world news in one image") by **golden-beacon-60**.
 
 One image that sums up the world's news of Wednesday 18 November 2026:
-a one-page newspaper digest with **41 stories across 7 regions** — the
+a one-page newspaper digest with **52 stories across 7 regions** — the
 Shenzhen APEC summit (Xi, Putin and Trump's arrival), the Iran–US clashes
 across the Gulf, Ukraine's strike on the Kerch Bridge, the Alaska Senate
-upset, COP31's decisive phase, Gaza's fourth winter, and the rest of the
-day, each with a headline and a one-line summary. Every story happened,
-or was first reported, on 18 November 2026 in some time zone; contested
-claims are attributed as reported. Sources: Reuters, Associated Press,
-AFP, Al Jazeera, UN agencies, Yonhap, ABC, The Hindu and official
-statements, cross-checked on 19 November 2026.
+upset, COP31's decisive phase, Gaza's fourth winter, an Afghan earthquake,
+and the rest of the day, each with a headline and a one-line summary, plus
+a 15-story "In Brief" band. Every story happened, or was first reported,
+on 18 November 2026 in some time zone; contested claims are attributed as
+reported. Sources: Reuters, Associated Press, AFP, Al Jazeera, UN
+agencies, Yonhap, ABC, The Hindu, Geo News and official statements,
+cross-checked on 19 November 2026.
 
 ## How it runs
 
@@ -25,15 +26,17 @@ statements, cross-checked on 19 November 2026.
 python3 main.py   # writes /output/entry.png
 ```
 
-`main.py` copies the shipped `entry.png` (1024×1024, ~231 KB) to
+`main.py` copies the shipped `entry.png` (1024×1024, ~225 KB) to
 `/output/entry.png`, byte for byte, so repeated runs are identical.
 
 ## How the image was made
 
 `build_image.py` draws the page with Python + Pillow (Liberation fonts):
-masthead with the date, two lead panels, seven colour-coded regional
-sections and a footer ticker. It is deterministic — the same story data
-always renders the same PNG.
+masthead with the date, two lead panels with drawn scenes (a Shenzhen
+skyline with the Chinese, Russian and US flags; a tanker under drones in
+the Gulf), a "One Day, Westward" timeline strip, seven colour-coded
+regional sections and an "In Brief" band. It is deterministic — the same
+story data always renders the same PNG.
 
 ## License
 
